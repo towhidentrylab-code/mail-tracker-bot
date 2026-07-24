@@ -106,6 +106,7 @@ async function main() {
         messageId: msg.id,
         imageUrl: att.url,
         timestamp: msg.timestamp,
+        label: (msg.content || '').trim(), // e.g. "3" - the update number you type alongside the screenshot
       };
 
       const postRes = await fetch(GAS_WEBAPP_URL, {
