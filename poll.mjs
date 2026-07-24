@@ -18,6 +18,45 @@ console.log('[debug] DISCORD_CHANNEL_ID length:', DISCORD_CHANNEL_ID.length);
 console.log('[debug] DISCORD_CHANNEL_ID is all digits:', /^\d+$/.test(DISCORD_CHANNEL_ID));
 console.log('[debug] DISCORD_BOT_TOKEN length:', DISCORD_BOT_TOKEN.length);
 
+async function debugListGuildsAndChannels() {
+  console.log('[debug] --- Listing servers/channels the bot can actually see ---');
+  const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+    headers: {
+      Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+      'User-Agent': 'DiscordBot (https://github.com, 1.0) MailTrackerPoller/1.0',
+    },
+  });
+  if (!guildsRes.ok) {
+    console.log('[debug] Could not list guilds:', guildsRes.status, await guildsRes.text());
+    return;
+  }
+  const guilds = await guildsRes.json();
+  console.log(`[debug] Bot is in ${guilds.length} server(s):`);
+  for (const guild of guilds) {
+    console.log(`[debug]   Server: "${guild.name}" (id: ${guild.id})`);
+    const chRes = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/channels`, {
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'User-Agent': 'DiscordBot (https://github.com, 1.0) MailTrackerPoller/1.0',
+      },
+    });
+    if (!chRes.ok) {
+      console.log('[debug]     Could not list channels:', chRes.status, await chRes.text());
+      continue;
+    }
+    const channels = await chRes.json();
+    channels
+      .filter((c) => c.type === 0) // text channels only
+      .forEach((c) => {
+        const marker = c.id === DISCORD_CHANNEL_ID ? '  <-- MATCHES your DISCORD_CHANNEL_ID' : '';
+        console.log(`[debug]     #${c.name}  (id: ${c.id})${marker}`);
+      });
+  }
+  console.log('[debug] --- End of list ---');
+}
+
+await debugListGuildsAndChannels();
+
 function assertEnv(name, value) {
   if (!value) {
     console.error(`Missing required environment variable / secret: ${name}`);
