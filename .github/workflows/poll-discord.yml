@@ -2,7 +2,7 @@ name: Poll Discord Channel
 
 on:
   schedule:
-    - cron: '*/1 * * * *'  # every 15 minutes - screenshots come roughly hourly, so this is a good balance
+    - cron: '*/5 * * * *'  # every 15 minutes - screenshots come roughly hourly, so this is a good balance
   workflow_dispatch: {}      # lets you click "Run workflow" manually to test
 
 jobs:
