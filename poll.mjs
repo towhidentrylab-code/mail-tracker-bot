@@ -1,7 +1,22 @@
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
-const GAS_WEBAPP_URL = process.env.GAS_WEBAPP_URL;
-const INGEST_SECRET = process.env.INGEST_SECRET;
+// poll.mjs
+// Runs on GitHub Actions (not Google Apps Script) so it isn't affected by
+// the Cloudflare block that Google's IP ranges sometimes hit on Discord's
+// API. Fetches recent messages from the target channel, and for every
+// image attachment found, forwards it to the Google Apps Script Web App,
+// which does the actual Gemini extraction + Sheet update. The Apps Script
+// side de-duplicates by (messageId, imageUrl), so it's safe if this script
+// re-sends the same image on a later run.
+
+const DISCORD_BOT_TOKEN = (process.env.DISCORD_BOT_TOKEN || '').trim();
+const DISCORD_CHANNEL_ID = (process.env.DISCORD_CHANNEL_ID || '').trim();
+const GAS_WEBAPP_URL = (process.env.GAS_WEBAPP_URL || '').trim();
+const INGEST_SECRET = (process.env.INGEST_SECRET || '').trim();
+
+// TEMPORARY DEBUG - remove once the issue is fixed. Does not print the
+// actual secret values, only their lengths, so it's safe to share in logs.
+console.log('[debug] DISCORD_CHANNEL_ID length:', DISCORD_CHANNEL_ID.length);
+console.log('[debug] DISCORD_CHANNEL_ID is all digits:', /^\d+$/.test(DISCORD_CHANNEL_ID));
+console.log('[debug] DISCORD_BOT_TOKEN length:', DISCORD_BOT_TOKEN.length);
 
 function assertEnv(name, value) {
   if (!value) {
@@ -58,7 +73,7 @@ async function main() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        redirect: 'follow',
+        redirect: 'follow', // Apps Script Web Apps respond with a redirect
       });
 
       const text = await postRes.text();
