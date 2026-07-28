@@ -94,8 +94,21 @@ async function main() {
 
   let sent = 0;
   let skipped = 0;
+  let ignoredOld = 0;
+
+  // Set the maximum age for a message to be processed (e.g., 2 hours)
+  const MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+  const now = Date.now();
 
   for (const msg of messages) {
+    // --- TIME FILTER LOGIC ---
+    const msgTime = new Date(msg.timestamp).getTime();
+    if ((now - msgTime) > MAX_AGE_MS) {
+      ignoredOld++;
+      continue; // Skip this message completely if it is older than 2 hours
+    }
+    // -------------------------
+
     if (!msg.attachments || msg.attachments.length === 0) continue;
 
     for (const att of msg.attachments) {
@@ -136,7 +149,7 @@ async function main() {
     }
   }
 
-  console.log(`Done. New: ${sent}, already logged: ${skipped}.`);
+  console.log(`Done. New: ${sent}, already logged: ${skipped}, completely ignored (old): ${ignoredOld}.`);
 }
 
 main().catch((err) => {
